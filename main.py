@@ -1,15 +1,7 @@
 """
-新书代理 (New Book Agent) - 主入口
+主入口 - 启动 Gradio 前端
 """
-from agent.book_agent import BookAgent
-from config import Config
-
-
-def main():
-    config = Config()
-    agent = BookAgent(config)
-    agent.run()
-
+from frontend.app import app
 
 if __name__ == "__main__":
-    main()
+    app.launch()
