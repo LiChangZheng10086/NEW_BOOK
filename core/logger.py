@@ -5,7 +5,8 @@ import logging
 import sys
 from pathlib import Path
 
-LOG_DIR = Path("logs")
+# 日志目录固定为项目根目录下的 logs，不随当前工作目录变化
+LOG_DIR = Path(__file__).resolve().parent.parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 

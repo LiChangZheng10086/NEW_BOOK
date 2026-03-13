@@ -76,7 +76,7 @@ class PlannerAgent:
                 return NovelSettings.model_validate(data)
         except Exception as e:
             logger.warning("JSON 解析失败，使用基础设定兜底：%s", e)
-        # 解析失败时返回基础设定
+        # 解析失败时返回基础设定（显式补全列表字段，避免后续假定非空）
         return NovelSettings(
             title=fallback.get("title", ""),
             genre=fallback.get("genre", ""),
@@ -84,4 +84,7 @@ class PlannerAgent:
             target_chapters=int(fallback.get("target_chapters", 10)),
             outline=fallback.get("outline", ""),
             world_setting=fallback.get("world_setting", ""),
+            characters=[],
+            foreshadowings=[],
+            plot_segments=[],
         )

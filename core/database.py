@@ -61,25 +61,35 @@ class NovelDatabase:
             return NovelSettings.model_validate_json(results[0].page_content)
         return None
 
-    def get_chapter_outline(self, novel_title: str, chapter_number: int) -> Optional[ChapterOutline]:
-        results = self.outlines_store.similarity_search(
-            f"chapter {chapter_number}",
-            k=1,
-            filter={"novel_title": novel_title, "chapter": chapter_number},
-        )
-        if results:
-            return ChapterOutline.model_validate_json(results[0].page_content)
-        return None
-
-    def get_chapter_content(self, novel_title: str, chapter_number: int) -> Optional[str]:
-        results = self.chapters_store.similarity_search(
-            f"chapter {chapter_number}",
-            k=1,
-            filter={"novel_title": novel_title, "chapter": chapter_number},
-        )
+    def _get_by_metadata(self, store: Chroma, where: dict) -> Optional[str]:
+        """按 metadata 精确查询一条记录，避免语义检索歧义。失败时回退到 similarity_search。"""
+        try:
+            coll = getattr(store, "_collection", None)
+            if coll is not None:
+                res = coll.get(where=where, include=["documents"], limit=1)
+                if res and res.get("documents"):
+                    return res["documents"][0]
+        except Exception:
+            pass
+        results = store.similarity_search(" ", k=1, filter=where)
         if results:
             return results[0].page_content
         return None
+
+    def get_chapter_outline(self, novel_title: str, chapter_number: int) -> Optional[ChapterOutline]:
+        content = self._get_by_metadata(
+            self.outlines_store,
+            {"novel_title": novel_title, "chapter": chapter_number},
+        )
+        if content:
+            return ChapterOutline.model_validate_json(content)
+        return None
+
+    def get_chapter_content(self, novel_title: str, chapter_number: int) -> Optional[str]:
+        return self._get_by_metadata(
+            self.chapters_store,
+            {"novel_title": novel_title, "chapter": chapter_number},
+        )
 
     def get_all_outlines(self, novel_title: str) -> List[ChapterOutline]:
         results = self.outlines_store.similarity_search(
